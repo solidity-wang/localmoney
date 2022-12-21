@@ -1,25 +1,42 @@
 <script setup lang="ts">
 import NavDesktop from './NavDesktop.vue'
 import NavMobile from './NavMobile.vue'
+import { useClientStore } from '~/stores/client'
+
+const client = useClientStore()
 
 // TODO - Make isMobile global
 const width = ref(window.innerWidth)
 const listener = () => {
   width.value = window.innerWidth
 }
-onMounted(() => {
+let easterEggClicks = 0
+
+onMounted(async () => {
   window.addEventListener('resize', listener)
+  if (localStorage.getItem('enableSeedPhrase') === 'true') {
+    await client.connectSeedPhrase()
+  }
 })
 onUnmounted(() => {
   window.removeEventListener('resize', listener)
 })
 const isMobile = computed(() => width.value <= 550)
+
+const enableSeedPhraseAfter10Times = async () => {
+  easterEggClicks++
+  if (easterEggClicks === 3) {
+    localStorage.setItem('enableSeedPhrase', 'true')
+    await client.connectSeedPhrase()
+    easterEggClicks = 0
+  }
+}
 </script>
 
 <template>
   <header>
     <div class="wrap">
-      <div class="wrap-logo">
+      <div class="wrap-logo" @click="enableSeedPhraseAfter10Times()">
         <router-link :to="{ path: '/' }">
           <div className="logo" />
         </router-link>

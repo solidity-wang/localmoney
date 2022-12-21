@@ -64,6 +64,18 @@ export const useClientStore = defineStore({
         alert((e as ChainError).message)
       }
     },
+    async connectSeedPhrase() {
+      try {
+        await this.client.connectSeedPhrase()
+        const address = this.client.getWalletAddress()
+        await this.syncSecrets(address)
+        this.userWallet = { isConnected: true, address }
+        await this.fetchArbitrators()
+      } catch (e) {
+        this.userWallet = { isConnected: false, address: 'undefined' }
+        alert((e as ChainError).message)
+      }
+    },
     getHubConfig(): HubConfig {
       return this.client.getHubConfig()
     },

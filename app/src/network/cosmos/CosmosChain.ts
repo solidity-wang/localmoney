@@ -3,6 +3,7 @@ import { CosmWasmClient, SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate
 import type { AccountData, OfflineSigner } from '@cosmjs/launchpad'
 import { Decimal } from '@cosmjs/math'
 import type { OfflineDirectSigner } from '@cosmjs/proto-signing'
+import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import type { Coin } from '@cosmjs/stargate'
 import type { Chain } from '~/network/Chain'
 import { DefaultError, WalletNotConnected, WalletNotInstalled } from '~/network/chain-error'
@@ -41,6 +42,26 @@ export class CosmosChain implements Chain {
       config: {},
     })) as HubConfig
     // console.log("Factory config >> ", this.hubInfo.hubConfig)
+  }
+
+  async connectSeedPhrase() {
+    let seed = localStorage.getItem('seed')
+    console.log('seed', seed)
+    if (!seed || seed?.length === 0) {
+      // eslint-disable-next-line no-alert
+      seed = prompt('Please enter your seed phrase', '')!
+      localStorage.setItem('seed', seed)
+    }
+    this.signer = await DirectSecp256k1HdWallet.fromMnemonic(seed!, { prefix: process.env.ADDR_PREFIX })
+    // get first account
+    const accounts = await this.signer.getAccounts()
+    this.account = accounts[0]
+    this.cwClient = await SigningCosmWasmClient.connectWithSigner(this.config.rpcUrl, this.signer, {
+      gasPrice: {
+        amount: Decimal.fromUserInput('0.0025', 100),
+        denom: this.config.coinMinimalDenom,
+      },
+    })
   }
 
   async connectWallet() {
